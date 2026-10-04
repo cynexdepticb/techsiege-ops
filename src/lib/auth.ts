@@ -68,16 +68,23 @@ export const authConfig = {
       }
       // Refresh role/vertical from the DB so a demotion takes effect immediately.
       if (token.id) {
-        const row = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { role: true, vertical: true, active: true, name: true },
-        });
-        if (!row?.active) {
-          token.invalid = true;
-          return token;
+        try {
+          const row = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { role: true, vertical: true, active: true, name: true },
+          });
+          if (!row?.active) {
+            token.invalid = true;
+            return token;
+          }
+          token.role = row.role;
+          token.vertical = row.vertical;
+        } catch (e) {
+          // A transient DB failure must not brick the session (Auth.js would
+          // surface it as JWTSessionError). Keep the last-known role and let
+          // the page's own queries fail/redirect with their real error.
+          console.error("[auth][jwt] role refresh failed, keeping cached token:", e);
         }
-        token.role = row.role;
-        token.vertical = row.vertical;
       }
       return token;
     },
