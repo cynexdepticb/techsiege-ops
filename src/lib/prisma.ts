@@ -17,5 +17,12 @@ function createClient(): PrismaClient {
   });
 }
 
-// Create fresh client instance with latest Prisma schema
-export const prisma = createClient();
+const globalForPrisma = globalThis as unknown as {
+  prisma: PrismaClient | undefined;
+};
+
+export const prisma = globalForPrisma.prisma ?? createClient();
+
+if (process.env.NODE_ENV !== "production") {
+  globalForPrisma.prisma = prisma;
+}
