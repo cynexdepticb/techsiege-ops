@@ -5,7 +5,7 @@ import { CheckinScanner } from "@/components/checkin/scanner";
 import { getSettings } from "@/lib/settings";
 import { formatDateTime } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Check-in" };
+export const metadata: Metadata = { title: "Desk check-in" };
 export const dynamic = "force-dynamic";
 
 export default async function CheckinPage() {
@@ -14,8 +14,8 @@ export default async function CheckinPage() {
   return (
     <div className="p-4 sm:p-6 lg:p-8">
       <PageHeader
-        title="Check-in scanner"
-        description="Scan attendee ticket QR codes or team passes to verify admission and check in participants."
+        title="Desk check-in"
+        description="Use a team code or attendee email to verify admission and check in participants."
       />
       <CheckinScanner actorName={actor.name} />
     </div>

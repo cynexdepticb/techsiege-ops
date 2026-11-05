@@ -13,6 +13,13 @@
  * because a team dropped without explanation is worse than a failed request.
  */
 export const TRACK_MAP: Record<string, string> = {
+  // TechSiege 2026 public registration tracks. These retain compatibility with
+  // the existing Ops track records until organisers rename them in Ops.
+  "agentic-ai": "autonomous-ai",
+  cybersecurity: "ai-developer-agents",
+  "climate-energy": "ai-for-social-impact",
+  "digital-health": "ai-for-healthcare",
+  "civic-tech": "ai-for-social-impact",
   autonomous: "autonomous-ai",
   education: "ai-for-education",
   healthcare: "ai-for-healthcare",

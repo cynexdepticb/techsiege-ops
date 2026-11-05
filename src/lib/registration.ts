@@ -2,7 +2,6 @@ import "server-only";
 import { randomBytes, randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { REGISTRATION } from "@/lib/constants";
-import { teamTicketUrl, makeTicketId } from "@/lib/ticket";
 
 /** Human-friendly, unambiguous team code: no O/0/I/1. */
 const ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -20,30 +19,6 @@ export function makeToken(bytes = 24): string {
 
 export function makeDraftToken(): string {
   return `draft_${randomUUID()}`;
-}
-
-/** Reads a team's QR token out of whatever the scanner handed us. */
-export function extractQrToken(payload: string): string {
-  const trimmed = payload.trim();
-  if (trimmed.startsWith("http")) {
-    try {
-      const url = new URL(trimmed);
-      return url.searchParams.get("t") ?? url.pathname.split("/").filter(Boolean).pop() ?? "";
-    } catch {
-      return trimmed;
-    }
-  }
-  return trimmed;
-}
-
-/**
- * Kept under its old name because callers read as "where do I send this team to
- * check in". It now points at /ticket/<token> — the page that actually exists.
- * The old /checkin/<token> shape had no matching route and 404'd, so every link
- * derived from it was dead.
- */
-export function teamCheckinUrl(origin: string, token: string): string {
-  return teamTicketUrl(origin, token);
 }
 
 /** Tracks how many teams are registered against the configured cap. */
@@ -130,6 +105,7 @@ export async function createTeamAndMembers(input: {
           projectIdea: input.team.projectIdea,
           trackId: input.team.trackId,
           status: input.status ?? "PENDING",
+          // Retained for database compatibility; QR passes are no longer issued or exposed.
           qrToken: makeToken(18),
           ...(input.sourceRef ? { sourceRef: input.sourceRef } : {}),
         },
@@ -144,8 +120,6 @@ export async function createTeamAndMembers(input: {
           year: m.year,
           role: m.isLeader ? ("LEADER" as const) : ("MEMBER" as const),
           teamId: created.id,
-          ticketId: makeTicketId(),
-          qrToken: `TECHSIEGE:TICKET:${randomUUID()}`,
         })),
       });
 

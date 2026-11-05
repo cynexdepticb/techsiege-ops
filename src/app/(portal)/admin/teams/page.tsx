@@ -19,7 +19,6 @@ import {
 import { TeamStatusFilter } from "@/components/teams/team-status-filter";
 import { RowDeleteButton } from "@/components/teams/row-delete-button";
 import { RowMarkPaid } from "@/components/teams/row-mark-paid";
-import { RowSendTicket } from "@/components/teams/row-send-ticket";
 import { formatDate, formatDateTime, formatNumber } from "@/lib/utils";
 import { TEAM_STATUS_LABEL, TEAM_STATUS_VARIANT } from "@/lib/authz-lite";
 import { SCREENING_LABEL } from "@/lib/labels";
@@ -87,7 +86,6 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
         createdAt: true,
         paymentStatus: true,
         paidAt: true,
-        ticketSentAt: true,
         track: { select: { id: true, name: true } },
         // `scores` is fetched so the delete affordance can say up front that a
         // team is undeletable, matching what the DELETE route refuses on.
@@ -235,10 +233,6 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
                                 team={{ id: t.id, code: t.code, name: t.name }}
                                 defaultAmount={String(settings.entryFee)}
                               />
-                            ) : !t.ticketSentAt ? (
-                              <RowSendTicket
-                                team={{ id: t.id, code: t.code, name: t.name }}
-                              />
                             ) : null}
                             <RowDeleteButton
                               team={{ id: t.id, code: t.code, name: t.name }}
@@ -310,9 +304,6 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
                             {TEAM_STATUS_LABEL[t.status]}
                           </Badge>
                         </TableCell>
-                        {/* Fee and ticket are separate facts: a team can have paid
-                            and still be waiting on its ticket, which is the state
-                            worth spotting before event day. */}
                         <TableCell>
                           <span className="flex flex-col items-start gap-1">
                             <Badge
@@ -325,11 +316,6 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
                             >
                               {t.paymentStatus === "PAID" ? "Paid" : "Unpaid"}
                             </Badge>
-                            {t.paymentStatus === "PAID" && !t.ticketSentAt ? (
-                              <span className="text-[11px] text-amber-500">
-                                no ticket sent
-                              </span>
-                            ) : null}
                           </span>
                         </TableCell>
                         <TableCell>
@@ -351,10 +337,6 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
                                 <RowMarkPaid
                                   team={{ id: t.id, code: t.code, name: t.name }}
                                   defaultAmount={String(settings.entryFee)}
-                                />
-                              ) : !t.ticketSentAt ? (
-                                <RowSendTicket
-                                  team={{ id: t.id, code: t.code, name: t.name }}
                                 />
                               ) : null}
                               <RowDeleteButton

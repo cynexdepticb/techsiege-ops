@@ -21,7 +21,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
   );
 
   return (
-    <div className="flex min-h-dvh flex-col lg:flex-row">
+    <div className="ops-workspace flex min-h-dvh flex-col lg:flex-row">
       <Sidebar
         sections={sections}
         actor={{
@@ -31,7 +31,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
           verticalLabel: actor.vertical && !isSuperAdmin(actor) ? VERTICAL_LABEL[actor.vertical] : null,
         }}
       />
-      <div className="min-w-0 flex-1">{children}</div>
+      <main className="min-w-0 flex-1">{children}</main>
     </div>
   );
 }

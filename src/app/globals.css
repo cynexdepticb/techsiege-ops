@@ -1,7 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* shadcn/ui tokens — neutral slate base, single cyan accent for this tool. */
+/* TechSiege Ops — event-control visual system. Replaceable UI, stable operations. */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -26,88 +26,78 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
-
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
   --font-sans: var(--font-sans);
-  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, monospace;
+  --font-mono: var(--font-mono);
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: #0a0c10;
-  --foreground: #e8ecf1;
-  --card: #10131a;
-  --card-foreground: #e8ecf1;
-  --popover: #141821;
-  --popover-foreground: #e8ecf1;
-  --primary: #22d3ee;
-  --primary-foreground: #04202a;
-  --secondary: #1a1f2b;
-  --secondary-foreground: #cbd5e1;
-  --muted: #161a23;
-  --muted-foreground: #7d8799;
-  --accent: #1c2230;
-  --accent-foreground: #e8ecf1;
-  --destructive: #f2555a;
-  --destructive-foreground: #2a0708;
-  --success: #34d399;
-  --success-foreground: #04241a;
-  --warning: #fbbf24;
-  --warning-foreground: #2a1e02;
-  --border: #202634;
-  --input: #262d3d;
-  --ring: #22d3ee;
+  --background: #101310;
+  --foreground: #f2f4ed;
+  --card: #181c17;
+  --card-foreground: #f2f4ed;
+  --popover: #1c211c;
+  --popover-foreground: #f2f4ed;
+  --primary: #d8ff4f;
+  --primary-foreground: #172000;
+  --secondary: #252b24;
+  --secondary-foreground: #d7ded2;
+  --muted: #20251f;
+  --muted-foreground: #9ba294;
+  --accent: #2c342b;
+  --accent-foreground: #f7faef;
+  --destructive: #ff786d;
+  --destructive-foreground: #300904;
+  --success: #7de1a8;
+  --success-foreground: #062214;
+  --warning: #ffca58;
+  --warning-foreground: #2b1b00;
+  --border: #373e35;
+  --input: #2b332a;
+  --ring: #d8ff4f;
 }
 
 @layer base {
-  * {
-    border-color: var(--border);
-  }
+  * { border-color: var(--border); }
+  html { overflow-x: clip; }
   body {
-    background: var(--background);
+    min-width: 20rem;
+    overflow-x: clip;
+    background:
+      linear-gradient(90deg, color-mix(in srgb, var(--foreground) 3%, transparent) 1px, transparent 1px),
+      linear-gradient(180deg, color-mix(in srgb, var(--foreground) 2%, transparent) 1px, transparent 1px),
+      var(--background);
+    background-size: 2rem 2rem;
     color: var(--foreground);
     font-feature-settings: "cv11", "ss01";
   }
-  /* Tabular figures everywhere numbers are compared in tables. */
-  table {
-    font-variant-numeric: tabular-nums;
-  }
-  ::-webkit-scrollbar {
-    width: 10px;
-    height: 10px;
-  }
-  ::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  ::-webkit-scrollbar-thumb {
-    background: #232a38;
-    border-radius: 999px;
-    border: 2px solid var(--background);
-  }
-  ::-webkit-scrollbar-thumb:hover {
-    background: #2f3849;
-  }
+  button, a, input, select, textarea { -webkit-tap-highlight-color: transparent; }
+  :focus-visible { outline: 2px solid var(--ring); outline-offset: 3px; }
+  table { font-variant-numeric: tabular-nums; }
+  ::selection { background: var(--primary); color: var(--primary-foreground); }
+  ::-webkit-scrollbar { width: 0.65rem; height: 0.65rem; }
+  ::-webkit-scrollbar-track { background: var(--background); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border: 2px solid var(--background); border-radius: 999px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--muted-foreground); }
 }
 
 @layer components {
-  /* RAG / amber status chips for the event-day checkpoint board */
-  .status-dot {
-    @apply inline-block size-2 rounded-full;
-  }
-  .status-green {
-    @apply bg-success;
-  }
-  .status-amber {
-    @apply bg-warning;
-  }
-  .status-red {
-    @apply bg-destructive;
-  }
-  .status-slate {
-    @apply bg-muted-foreground/50;
-  }
+  .ops-workspace { min-height: 100dvh; background: color-mix(in srgb, var(--background) 84%, transparent); }
+  .ops-page { max-width: 100rem; margin-inline: auto; }
+  .ops-rail-rule { height: 1px; background: var(--border); }
+  .ops-kicker { color: var(--muted-foreground); font-size: 0.6875rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+  .ops-brand-mark { color: var(--primary); font-family: var(--font-mono); font-size: 0.78rem; font-weight: 700; letter-spacing: -0.04em; }
+  .ops-grid-mark { background-image: radial-gradient(circle, color-mix(in srgb, var(--primary) 58%, transparent) 1px, transparent 1px); background-size: 0.45rem 0.45rem; }
+  .status-dot { display: inline-block; height: 0.5rem; width: 0.5rem; border-radius: 999px; }
+  .status-green { background: var(--success); }
+  .status-amber { background: var(--warning); }
+  .status-red { background: var(--destructive); }
+  .status-slate { background: var(--muted-foreground); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }

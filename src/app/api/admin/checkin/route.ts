@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import { checkinSchema } from "@/lib/validation";
-import { extractQrToken } from "@/lib/registration";
 import { fail, guard, zodFail } from "@/lib/http";
 import { audit } from "@/lib/audit";
 import { getSettings } from "@/lib/settings";
@@ -10,7 +9,7 @@ import type { CheckpointName, TeamStatus } from "@/generated/prisma/enums";
 
 export const dynamic = "force-dynamic";
 
-/** Extract all plausible lookup keys from any scanned QR text, URL, token, or code. */
+/** Extract plausible team-code or attendee-email lookup keys from manual input. */
 export function extractLookupCandidates(payload: string): string[] {
   const trimmed = payload.trim();
   if (!trimmed) return [];
@@ -35,15 +34,6 @@ export function extractLookupCandidates(payload: string): string[] {
         }
       }
     } catch {}
-  }
-
-  // Handle TECHSIEGE prefixes
-  for (const item of Array.from(set)) {
-    if (item.toUpperCase().startsWith("TECHSIEGE:TICKET:")) {
-      set.add(item.replace(/^TECHSIEGE:TICKET:/i, "").trim());
-    } else {
-      set.add(`TECHSIEGE:TICKET:${item}`);
-    }
   }
 
   return Array.from(set).filter(Boolean);
@@ -83,7 +73,6 @@ export async function POST(req: Request) {
       ? {
           OR: [
             ...candidates.map((c) => ({ code: { equals: c, mode: "insensitive" as const } })),
-            ...candidates.map((c) => ({ qrToken: { equals: c, mode: "insensitive" as const } })),
             ...candidates.map((c) => ({ id: c })),
             ...candidates.map((c) => ({ sourceRef: c })),
             ...candidates.map((c) => ({ contactEmail: { equals: c, mode: "insensitive" as const } })),
@@ -92,8 +81,6 @@ export async function POST(req: Request) {
               participants: {
                 some: {
                   OR: [
-                    ...candidates.map((c) => ({ ticketId: { equals: c, mode: "insensitive" as const } })),
-                    ...candidates.map((c) => ({ qrToken: { equals: c, mode: "insensitive" as const } })),
                     ...candidates.map((c) => ({ email: { equals: c, mode: "insensitive" as const } })),
                   ],
                 },
@@ -110,9 +97,6 @@ export async function POST(req: Request) {
           name: true,
           email: true,
           role: true,
-          ticketId: true,
-          pdfFilename: true,
-          qrToken: true,
           checkedIn: true,
           checkedInAt: true,
           checkedInBy: true,
@@ -125,7 +109,7 @@ export async function POST(req: Request) {
 
   if (!team) {
     return NextResponse.json(
-      { ok: false, error: "No matching team or ticket found. Check the code and try again.", reason: "UNKNOWN" },
+      { ok: false, error: "No matching team or attendee found. Check the team code or email and try again.", reason: "UNKNOWN" },
       { status: 404 },
     );
   }
@@ -155,8 +139,6 @@ export async function POST(req: Request) {
     ? team.participants.find((p) =>
         candidates.some(
           (c) =>
-            p.ticketId?.toLowerCase() === c.toLowerCase() ||
-            p.qrToken?.toLowerCase() === c.toLowerCase() ||
             p.email.toLowerCase() === c.toLowerCase(),
         ),
       )
@@ -181,7 +163,7 @@ export async function POST(req: Request) {
         },
         matchedParticipant,
         checkpoint,
-        message: `${matchedParticipant.name} (${matchedParticipant.ticketId ?? "Member"}) was already checked in${matchedParticipant.checkedInAt ? ` at ${new Date(matchedParticipant.checkedInAt).toLocaleTimeString()}` : ""}.`,
+        message: `${matchedParticipant.name} was already checked in${matchedParticipant.checkedInAt ? ` at ${new Date(matchedParticipant.checkedInAt).toLocaleTimeString()}` : ""}.`,
         loggedAt: matchedParticipant.checkedInAt ?? already?.createdAt ?? new Date(),
       });
     }
@@ -205,7 +187,7 @@ export async function POST(req: Request) {
         data: {
           teamId: team.id,
           checkpoint: "REGISTRATION",
-          note: note || `Attendee ${matchedParticipant.name} (${matchedParticipant.ticketId ?? ""}) checked in`,
+          note: note || `Attendee ${matchedParticipant.name} checked in`,
           notedBy: recorder,
           scannedById: auth.actor.id,
         },
@@ -227,7 +209,6 @@ export async function POST(req: Request) {
       entityId: matchedParticipant.id,
       after: {
         name: matchedParticipant.name,
-        ticketId: matchedParticipant.ticketId,
         teamCode: team.code,
       },
     });

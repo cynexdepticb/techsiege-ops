@@ -61,11 +61,11 @@ export function RowMarkPaid({
       }
       if (data.sent > 0) {
         toast.success(`Payment verified · ${team.code}`, {
-          description: `All member ticket PDFs generated & emailed to team leader.`,
+          description: "Registration confirmed and acknowledgement email sent.",
         });
       } else {
         toast.warning(`Payment verified · ${team.code}`, {
-          description: `Tickets generated, but email delivery had issues: ${data.reason || "check address"}.`,
+          description: data.reason || "Registration confirmed, but email delivery had issues.",
         });
       }
       setOpen(false);
@@ -91,9 +91,8 @@ export function RowMarkPaid({
             Verify payment for {team.name}?
           </DialogTitle>
           <DialogDescription>
-            Confirming payment verifies the team, confirms registration, generates
-            individual PDF admission tickets with unique QR codes for all members, and
-            emails them as attachments to the team leader.
+            Confirming payment verifies the team, confirms registration, and sends
+            a confirmation email to the team leader. No ticket is issued.
           </DialogDescription>
         </DialogHeader>
 

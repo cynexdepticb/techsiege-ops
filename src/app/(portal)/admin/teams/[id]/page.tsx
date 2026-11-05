@@ -15,12 +15,8 @@ import { formatDateTime } from "@/lib/utils";
 import { CHECKPOINT_LABEL, TEAM_STATUS_LABEL, TEAM_STATUS_VARIANT } from "@/lib/authz-lite";
 import { SCREENING_LABEL, SCREENING_VARIANT } from "@/lib/labels";
 import { CHECKPOINTS } from "@/lib/site";
-import { teamCheckinUrl } from "@/lib/registration";
-import { siteOrigin } from "@/lib/site";
 import { getSettings } from "@/lib/settings";
-import { QrBadge } from "@/components/teams/qr-badge";
-import { MemberQrCards } from "@/components/teams/member-qr-cards";
-import { ArrowLeft, FileDown, ExternalLink } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 
 export const metadata: Metadata = { title: "Team" };
 export const dynamic = "force-dynamic";
@@ -57,8 +53,6 @@ export default async function TeamDetailPage({
       orderBy: { sortOrder: "asc" },
     }),
   ]);
-
-  const checkinUrl = teamCheckinUrl(siteOrigin(), team.qrToken);
 
   const done = new Set(team.checkpoints.map((c) => c.checkpoint));
   const avgScore =
@@ -144,18 +138,6 @@ export default async function TeamDetailPage({
                   <div className="min-w-0">
                     <div className="font-medium flex flex-wrap items-center gap-1.5 sm:gap-2">
                       <span>{p.name}</span>
-                      {p.ticketId ? (
-                        <Link
-                          href={`/ticket/${p.ticketId}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="font-mono text-xs text-cyan-400 bg-cyan-950/60 border border-cyan-800/60 px-1.5 py-0.5 rounded hover:bg-cyan-900/60 transition inline-flex items-center gap-1"
-                          title="Open attendee ticket"
-                        >
-                          {p.ticketId}
-                          <ExternalLink className="size-2.5 opacity-70" />
-                        </Link>
-                      ) : null}
                       {p.checkedIn ? (
                         <span className="text-[10px] font-semibold text-emerald-400 bg-emerald-950/60 border border-emerald-800/60 px-1.5 py-0.5 rounded">
                           Checked in
@@ -176,26 +158,6 @@ export default async function TeamDetailPage({
                       <span className="text-xs text-muted-foreground">{p.year}</span>
                     ) : null}
                     {p.role === "LEADER" ? <Badge>Lead</Badge> : null}
-                    <Link
-                      href={`/ticket/${p.ticketId || p.qrToken}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center gap-1 rounded bg-secondary/80 px-2 py-1 text-xs font-medium text-foreground hover:bg-secondary border border-border"
-                      title="View individual QR code pass"
-                    >
-                      <ExternalLink className="size-3" /> Pass
-                    </Link>
-                    {team.paymentStatus === "PAID" ? (
-                      <a
-                        href={`/api/admin/participants/${p.id}/pdf`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-1 rounded bg-cyan-950/40 px-2 py-1 text-xs font-medium text-cyan-300 hover:bg-cyan-950/70 border border-cyan-800/50"
-                        title="Download individual PDF ticket"
-                      >
-                        <FileDown className="size-3.5" /> PDF
-                      </a>
-                    ) : null}
                   </div>
                 </div>
               ))}
@@ -315,52 +277,21 @@ export default async function TeamDetailPage({
             />
           ) : null}
 
-          {/* entry fee + ticket. Sits directly above the QR card because the
-              ticket email is what puts that code in a team's inbox. */}
+          {/* Entry-fee verification confirms a registration. */}
           {canEdit ? (
             <PaymentPanel
               team={{
                 id: team.id,
                 code: team.code,
                 name: team.name,
-                status: team.status,
-                memberCount: team.participants.length,
                 paymentStatus: team.paymentStatus,
                 amountPaid: team.amountPaid === null ? null : String(team.amountPaid),
                 paymentRef: team.paymentRef,
                 paidAt: team.paidAt?.toISOString() ?? null,
-                ticketSentAt: team.ticketSentAt?.toISOString() ?? null,
-                ticketEmailStatus: team.ticketEmailStatus,
-                ticketEmailLastError: team.ticketEmailLastError,
-                participants: team.participants.map((p) => ({
-                  id: p.id,
-                  name: p.name,
-                  role: p.role,
-                  ticketId: p.ticketId,
-                  pdfFilename: p.pdfFilename,
-                })),
               }}
               defaultAmount={team.amountPaid === null ? String(settings.entryFee) : String(team.amountPaid)}
             />
           ) : null}
-
-          {/* individual participant check-in QR codes */}
-          <MemberQrCards
-            participants={team.participants.map((p) => ({
-              id: p.id,
-              name: p.name,
-              role: p.role,
-              ticketId: p.ticketId,
-              qrToken: p.qrToken,
-              checkedIn: p.checkedIn,
-              checkedInAt: p.checkedInAt?.toISOString() ?? null,
-              pdfFilename: p.pdfFilename,
-            }))}
-            teamCode={team.code}
-            teamName={team.name}
-            teamQrToken={team.qrToken}
-            origin={siteOrigin()}
-          />
 
           {/* checkpoints */}
           <Card>

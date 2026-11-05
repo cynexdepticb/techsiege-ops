@@ -37,13 +37,6 @@ export default async function SignInPage() {
             <SignInForm hasGoogle={hasGoogle} />
           </CardContent>
         </Card>
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          Participants don&rsquo;t need an account —{" "}
-          <a href="/register" className="text-primary underline-offset-4 hover:underline">
-            registration is public
-          </a>
-          .
-        </p>
       </div>
     </div>
   );

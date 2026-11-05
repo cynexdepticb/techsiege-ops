@@ -307,7 +307,7 @@ export const checkinSchema = z
     } else if (!v.payload && !v.teamId) {
       ctx.addIssue({
         code: "custom",
-        message: "Provide a ticket code to scan or select a team from the board.",
+        message: "Provide a team code or attendee email, or select a team from the board.",
         path: ["payload"],
       });
     }
@@ -363,12 +363,6 @@ export const paymentSchema = z.discriminatedUnion("action", [
     action: z.literal("mark-paid"),
     amountPaid: z.coerce.number().min(0).max(10_000_000).nullish(),
     paymentRef: z.string().trim().max(120).optional(),
-  }),
-  z.object({
-    action: z.literal("send-ticket"),
-  }),
-  z.object({
-    action: z.literal("resend-tickets"),
   }),
 ]);
 

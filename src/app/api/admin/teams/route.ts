@@ -50,7 +50,6 @@ const LIST_SELECT = {
   paymentStatus: true,
   amountPaid: true,
   paidAt: true,
-  ticketSentAt: true,
   track: { select: { id: true, name: true } },
   // `scores` is selected so the delete affordance can tell up front that a team
   // is undeletable, matching what the DELETE route refuses on.
@@ -108,7 +107,6 @@ export async function GET(req: Request) {
         "amount_paid",
         "payment_ref",
         "paid_at",
-        "ticket_sent_at",
       ],
       rows.map((t) => [
         t.code,
@@ -128,7 +126,6 @@ export async function GET(req: Request) {
         t.amountPaid === null ? "" : String(t.amountPaid),
         t.paymentRef,
         t.paidAt?.toISOString() ?? "",
-        t.ticketSentAt?.toISOString() ?? "",
       ]),
     );
 
