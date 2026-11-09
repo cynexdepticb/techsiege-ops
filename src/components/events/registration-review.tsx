@@ -12,12 +12,19 @@ type Registration = {
   teamCode: string;
   teamName: string;
   institution: string;
+  city: string;
   leaderName: string | null;
   leaderEmail: string | null;
   trackId: string;
   memberCount: number;
+  members: { name: string; email: string; phone: string; branchYear: string; isLead: boolean }[];
+  registrationStatus: string;
   paymentStatus: string;
   paymentReference: string;
+  confirmationEmailStatus: string;
+  rejectionReason: string;
+  submittedAt: string;
+  verifiedAt: string | null;
   hasScreenshot: boolean;
 };
 type Decision = "VERIFY" | "REJECT";
@@ -79,7 +86,7 @@ export function RegistrationReview({ registration }: { registration: Registratio
 
       {open && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/70 p-4" role="dialog" aria-modal="true" aria-label={`Review ${registration.teamName}`}>
-          <div className="max-h-[90dvh] w-full max-w-2xl overflow-y-auto border border-border bg-card shadow-2xl">
+          <div className="max-h-[92dvh] w-full max-w-4xl overflow-y-auto border border-border bg-card shadow-2xl">
             <div className="flex items-start justify-between gap-4 border-b border-border p-5">
               <div>
                 <p className="ops-kicker">Payment review</p>
@@ -91,7 +98,7 @@ export function RegistrationReview({ registration }: { registration: Registratio
               </button>
             </div>
 
-            <div className="grid gap-6 p-5 md:grid-cols-[minmax(0,1fr)_15rem]">
+            <div className="grid gap-6 p-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(17rem,.85fr)]">
               <div>
                 <div className="flex items-center justify-between gap-3">
                   <p className="text-xs text-muted-foreground">Payment receipt</p>
@@ -132,17 +139,48 @@ export function RegistrationReview({ registration }: { registration: Registratio
               </div>
 
               <div className="space-y-4 text-sm">
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant={registration.registrationStatus === "CONFIRMED" ? "success" : "muted"}>{formatStatus(registration.registrationStatus)}</Badge>
+                  <Badge variant={registration.paymentStatus === "VERIFIED" ? "success" : "muted"}>{registration.paymentStatus === "VERIFIED" ? "Payment verified" : formatStatus(registration.paymentStatus)}</Badge>
+                </div>
                 <Detail label="Leader" value={registration.leaderName ?? "—"} />
                 <Detail label="Email" value={registration.leaderEmail ?? "—"} />
                 <Detail label="College" value={registration.institution} />
-                <Detail label="Members" value={String(registration.memberCount)} />
+                <Detail label="City" value={registration.city || "Not provided"} />
                 <Detail label="Track" value={registration.trackId} />
+                <Detail label="Team size" value={`${registration.memberCount} members`} />
                 <Detail label="UPI reference" value={registration.paymentReference || "Not provided"} />
-                <Badge variant={registration.paymentStatus === "VERIFIED" ? "success" : "muted"}>
-                  {registration.paymentStatus === "VERIFIED" ? "Verified" : "Pending"}
-                </Badge>
+                <Detail label="Confirmation email" value={formatStatus(registration.confirmationEmailStatus)} />
+                <Detail label="Submitted" value={formatTimestamp(registration.submittedAt)} />
+                <Detail label="Verified" value={registration.verifiedAt ? formatTimestamp(registration.verifiedAt) : "Not verified"} />
+                {registration.rejectionReason && <Detail label="Rejection reason" value={registration.rejectionReason} />}
               </div>
             </div>
+
+            <section className="mx-5 mb-5 border-t border-border pt-5" aria-labelledby={`members-${registration.id}`}>
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <h3 id={`members-${registration.id}`} className="font-semibold">Team members</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">Full roster and participant contact details.</p>
+                </div>
+                <Badge variant="muted">{registration.members.length} people</Badge>
+              </div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {registration.members.map((member, index) => (
+                  <article key={`${member.email}-${index}`} className="border border-border bg-muted/20 p-4 text-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-medium">{member.name}</p>
+                      {member.isLead && <Badge variant="default">Team leader</Badge>}
+                    </div>
+                    <dl className="mt-3 space-y-2 text-xs">
+                      <MemberDetail label="Email" value={member.email} />
+                      <MemberDetail label="Phone" value={member.phone} />
+                      <MemberDetail label="Branch / year" value={member.branchYear || "Not provided"} />
+                    </dl>
+                  </article>
+                ))}
+              </div>
+            </section>
 
             {confirmation && (
               <div className="mx-5 border border-warning/60 bg-warning/10 p-4 text-sm" role="alert">
@@ -184,4 +222,16 @@ function Detail({ label, value }: { label: string; value: string }) {
       <p className="mt-1 break-words font-medium">{value}</p>
     </div>
   );
+}
+
+function MemberDetail({ label, value }: { label: string; value: string }) {
+  return <div className="grid grid-cols-[5.5rem_1fr] gap-2"><dt className="text-muted-foreground">{label}</dt><dd className="break-words font-medium">{value}</dd></div>;
+}
+
+function formatStatus(status: string) {
+  return status.replaceAll("_", " ").toLowerCase().replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function formatTimestamp(value: string) {
+  return new Intl.DateTimeFormat("en-IN", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Kolkata" }).format(new Date(value));
 }
