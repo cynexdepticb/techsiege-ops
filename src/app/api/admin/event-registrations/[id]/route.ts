@@ -3,6 +3,7 @@ import { z } from "zod";
 import { guard, fail, zodFail } from "@/lib/http";
 import { prisma } from "@/lib/prisma";
 import { sendEmail, toHtml } from "@/lib/email/send";
+import { findFestEvent } from "@/lib/fest-events";
 
 const inputSchema = z.object({ decision: z.enum(["VERIFY", "REJECT"]) });
 
@@ -13,8 +14,8 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
   const parsed = inputSchema.safeParse(await request.json().catch(() => null));
   if (!parsed.success) return zodFail(parsed.error);
 
-  const rows = await prisma.$queryRaw<{ team_name: string; team_code: string; institution: string; payment_screenshot_path: string; full_name: string | null; email: string | null }[]>`
-    SELECT t.team_name, t.team_code, t.institution, t.payment_screenshot_path, m.full_name, m.email
+  const rows = await prisma.$queryRaw<{ team_name: string; team_code: string; event_slug: string | null; institution: string; payment_screenshot_path: string; full_name: string | null; email: string | null }[]>`
+    SELECT t.team_name, t.team_code, t.event_slug, t.institution, t.payment_screenshot_path, m.full_name, m.email
     FROM public.teams t
     LEFT JOIN public.members m ON m.team_id = t.id AND m.is_lead = true
     WHERE t.id = ${id}
@@ -32,7 +33,16 @@ export async function POST(request: Request, context: { params: Promise<{ id: st
 
   await prisma.$executeRaw`UPDATE public.teams SET registration_status = 'CONFIRMED', payment_status = 'VERIFIED', verified_at = now(), verified_by = ${auth.actor.email}, rejection_reason = '', updated_at = now() WHERE id = ${id}`;
   const firstName = (team.full_name ?? "there").trim().split(/\s+/)[0] || "there";
-  const body = `Hi ${firstName},\n\nYour payment has been verified and your registration for TechSiege 2026 is confirmed.\n\nTeam: ${team.team_name}\nTeam code: ${team.team_code}\nCollege: ${team.institution}\n\nPlease bring your college ID and quote your team code at the event desk. Final event instructions will be shared shortly.\n\nTechSiege Operations`;
+  const festEvent = findFestEvent(team.event_slug ?? "");
+  const eventLine = festEvent ? `Event: ${festEvent.name}\n` : "";
+  // Every event runs its own WhatsApp group: briefs, timings and last-minute
+  // changes go out there, so joining is the one action the team must take now.
+  // An event without a group link yet falls back to "we will share it", so the
+  // mail never promises a link it cannot give.
+  const groupBlock = festEvent?.whatsappLink
+    ? `Next step — join the official ${festEvent.name} WhatsApp group. All event briefs, timings and updates are shared only there, so please join now and keep at least the team leader in it until the event ends.\n\n${festEvent.whatsappLink}`
+    : `Next step — the official WhatsApp group link for your event will be sent to you shortly. All event briefs, timings and updates are shared only there, so please join as soon as you receive it.`;
+  const body = `Hi ${firstName},\n\nYour payment has been verified and your registration for TechSiege 2026 is confirmed.\n\nTeam: ${team.team_name}\nTeam code: ${team.team_code}\n${eventLine}College: ${team.institution}\n\n${groupBlock}\n\nPlease bring your college ID and quote your team code at the event desk. Final event instructions will be shared shortly.\n\nTechSiege Operations`;
   const sent = await sendEmail({ to: team.email, subject: "TechSiege 2026 — Registration confirmed", html: toHtml(body) });
   await prisma.$executeRaw`UPDATE public.teams SET confirmation_email_status = ${sent.status === "SENT" ? "SENT" : "FAILED"} WHERE id = ${id}`;
   return NextResponse.json({ ok: true, emailSent: sent.status === "SENT", message: sent.status === "SENT" ? "Final confirmation email sent to the team leader." : sent.error ?? "Payment verified, but email delivery failed." });

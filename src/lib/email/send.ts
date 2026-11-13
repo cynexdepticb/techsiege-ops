@@ -118,7 +118,14 @@ export function toHtml(body: string, vars?: TemplateVars): string {
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;");
-  const paragraphs = escaped
+  // Bodies are plain text, so a URL arrives as bare text and some clients
+  // leave it unclickable. Linkify after escaping: the href then carries the
+  // already-escaped text, and nothing a body contains can inject markup.
+  const linked = escaped.replace(
+    /https?:\/\/[^\s<"]+[^\s<".,;:!?)\]]/g,
+    (url) => `<a href="${url}" style="color:#22d3ee;word-break:break-all">${url}</a>`,
+  );
+  const paragraphs = linked
     .split(/\n{2,}/)
     .map((p) => `<p style="margin:0 0 14px;line-height:1.65">${p.replace(/\n/g, "<br>")}</p>`)
     .join("");
