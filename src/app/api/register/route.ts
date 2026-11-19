@@ -137,9 +137,6 @@ export async function POST(req: Request) {
     return error(422, `Duplicate email in the form: ${dupes.join(", ")}`);
   }
 
-  const remaining = await registrationsRemainingSafe(settings.maxTeams);
-  if (remaining <= 0) return error(403, "Registration has reached the team cap.");
-
   /* Accepts an ops track id, an ops slug, or a marketing track id. The marketing
      form posts its own short ids, and rejecting those would push every
      registration back onto the manual import path. */

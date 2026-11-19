@@ -31,9 +31,6 @@ export default async function RegisterPage() {
       <header className="mb-8">
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant="default">Registration open</Badge>
-          <Badge variant="muted">
-            {remaining > 0 ? `${remaining} team slots left` : "At capacity"}
-          </Badge>
         </div>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight">Register your team</h1>
         <p className="mt-2 text-muted-foreground">
