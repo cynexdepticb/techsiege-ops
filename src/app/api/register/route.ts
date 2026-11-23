@@ -7,6 +7,7 @@ import { findDuplicateEmails, registrationSchema, validateLeaderRule } from "@/l
 import { sendTemplatedEmail } from "@/lib/email/send";
 import { buildVars } from "@/lib/email/vars";
 import { opsSlugForMarketingTrack } from "@/lib/tracks";
+import { findExistingTeamName } from "@/lib/team-names";
 
 export const dynamic = "force-dynamic";
 
@@ -58,11 +59,8 @@ export async function POST(req: Request) {
   if (body.action === "check-name") {
     const name = String(body.name ?? "").trim();
     if (name.length < 3) return NextResponse.json({ ok: true, available: true });
-    const taken = await prisma.team.findFirst({
-      where: { name: { equals: name, mode: "insensitive" } },
-      select: { id: true },
-    });
-    return NextResponse.json({ ok: true, available: !taken });
+    const existing = await findExistingTeamName(name);
+    return NextResponse.json({ ok: true, available: !existing, existingName: existing });
   }
 
   if (body.action === "check-track") {
@@ -137,6 +135,18 @@ export async function POST(req: Request) {
     return error(422, `Duplicate email in the form: ${dupes.join(", ")}`);
   }
 
+  const existingTeamName = await findExistingTeamName(input.team.name);
+  if (existingTeamName) {
+    return NextResponse.json(
+      {
+        ok: false,
+        error: "The team name \"" + existingTeamName + "\" is already registered. Choose a different name.",
+        fields: { "team.name": "This team name is already registered." },
+      },
+      { status: 409 },
+    );
+  }
+
   /* Accepts an ops track id, an ops slug, or a marketing track id. The marketing
      form posts its own short ids, and rejecting those would push every
      registration back onto the manual import path. */
@@ -168,6 +178,16 @@ export async function POST(req: Request) {
               ? `${result.conflicts[0]!.email} is already registered with ${result.conflicts[0]!.team ?? "another team"}. One person can only be on one team.`
               : "One of those emails is already registered on another team.",
           conflicts: result.conflicts,
+        },
+        { status: 409 },
+      );
+    }
+    if (result.code === "TEAM_NAME_TAKEN") {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "The team name \"" + result.existingName + "\" is already registered. Choose a different name.",
+          fields: { "team.name": "This team name is already registered." },
         },
         { status: 409 },
       );

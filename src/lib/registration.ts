@@ -2,6 +2,7 @@ import "server-only";
 import { randomBytes, randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { REGISTRATION } from "@/lib/constants";
+import { findExistingTeamName } from "@/lib/team-names";
 
 /** Human-friendly, unambiguous team code: no O/0/I/1. */
 const ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
@@ -61,6 +62,15 @@ export async function createTeamAndMembers(input: {
    */
   sourceRef?: string;
 }) {
+  const existingTeamName = await findExistingTeamName(input.team.name);
+  if (existingTeamName) {
+    return {
+      ok: false as const,
+      code: "TEAM_NAME_TAKEN" as const,
+      existingName: existingTeamName,
+    };
+  }
+
   const emails = input.members.map((m) => m.email.toLowerCase());
 
   const conflicts = await prisma.participant.findMany({

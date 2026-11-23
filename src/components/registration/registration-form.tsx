@@ -130,7 +130,7 @@ export function RegistrationForm({
         body: JSON.stringify({ action, ...(action === "check-email" ? { email: value } : action === "check-name" ? { name: value } : { trackId: value }) }),
       });
       const data = await res.json();
-      if (action === "check-name") setAvailability((a) => ({ ...a, name: data.available ? undefined : "A team with this name already exists." }));
+      if (action === "check-name") setAvailability((a) => ({ ...a, name: data.available ? undefined : "A team named \"" + (data.existingName ?? value.trim()) + "\" already exists." }));
       if (action === "check-email") setAvailability((a) => ({ ...a, email: data.available ? undefined : "This email is already on a team." }));
       if (action === "check-track") setAvailability((a) => ({ ...a, track: data.available ? undefined : (data.reason ?? "This track is full.") }));
       return Boolean(data.available);
