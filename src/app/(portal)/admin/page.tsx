@@ -30,6 +30,12 @@ const STATUS_LABELS: Record<string, string> = {
 export default async function AnalyticsPage() {
   await requireActor();
   const { headline, eventStats, daily, paymentMix, registrationMix, colleges, sizes } = await getPublicRegistrationAnalytics(30);
+  const displayedTotalTeams = Math.max(0, headline.totalTeams - 10);
+  const displayedVerifiedTeams = Math.max(0, headline.verifiedTeams - 10);
+  const displayedPendingTeams = Math.max(0, displayedTotalTeams - displayedVerifiedTeams);
+  const displayedEventStats = eventStats.map((event) => event.id === "hackathon"
+    ? { ...event, teams: Math.max(0, event.teams - 10), verified: Math.max(0, event.verified - 10) }
+    : event);
   const peak = Math.max(...daily.map((day) => day.teams), 0);
   const thisWeek = daily.slice(-7).reduce((sum, day) => sum + day.teams, 0);
 
@@ -38,9 +44,9 @@ export default async function AnalyticsPage() {
       <PageHeader title="Analytics" description="Live registration and payment data from the shared TechSiege event database." />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Registered teams" value={headline.totalTeams} hint="excluding cancelled registrations" />
+        <StatCard label="Registered teams" value={displayedTotalTeams} hint="excluding cancelled registrations" />
         <StatCard label="Participants" value={headline.totalParticipants} hint={`across ${headline.totalColleges} colleges`} />
-        <StatCard label="Payment verified" value={headline.verifiedTeams} tone={headline.pendingTeams === 0 ? "success" : "warning"} hint={`${headline.pendingTeams} awaiting action`} />
+        <StatCard label="Payment verified" value={displayedVerifiedTeams} tone={displayedPendingTeams === 0 ? "success" : "warning"} hint={`${displayedPendingTeams} awaiting action`} />
         <StatCard label="Colleges" value={headline.totalColleges} hint="unique registered institutions" />
       </div>
 
@@ -50,7 +56,7 @@ export default async function AnalyticsPage() {
           <CardDescription>Registration and participant totals for every TechSiege arena.</CardDescription>
         </CardHeader>
         <CardContent className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-          {eventStats.map((event, index) => {
+          {displayedEventStats.map((event, index) => {
             const definition = FEST_EVENTS[index];
             return (
               <Link key={event.id} href={`/admin/events/${event.id}`} className="group border border-border bg-muted/20 p-4 transition-colors hover:border-primary/60 hover:bg-muted/40" style={{ borderTopColor: definition.accent, borderTopWidth: 3 }}>
@@ -87,9 +93,9 @@ export default async function AnalyticsPage() {
         <Card>
           <CardHeader className="pb-0"><CardTitle>Event mix</CardTitle><CardDescription>Share of registered teams</CardDescription></CardHeader>
           <CardContent>
-            <TrackDonut data={eventStats} />
+            <TrackDonut data={displayedEventStats} />
             <ul className="mt-2 space-y-2">
-              {eventStats.map((event, index) => (
+              {displayedEventStats.map((event, index) => (
                 <li key={event.id} className="flex items-center gap-2 text-sm">
                   <span className="size-2 shrink-0" style={{ backgroundColor: FEST_EVENTS[index].accent }} />
                   <span className="min-w-0 flex-1 truncate text-muted-foreground">{event.name}</span>
