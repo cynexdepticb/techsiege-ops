@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
-type Registration = {
+export type Registration = {
   id: string;
   teamCode: string;
   teamName: string;
